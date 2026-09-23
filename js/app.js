@@ -59,13 +59,18 @@
   // ---------------- mapa ----------------
   function initMap() {
     map = L.map('map', { zoomControl: true, minZoom: 5, attributionControl: true }).setView([-1.5, -78.4], 7);
-    const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19 });
+    const esriAttr = 'Tiles &copy; Esri';
+    const gris = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: esriAttr + ' — Esri, HERE, Garmin, &copy; OpenStreetMap', maxZoom: 16 });
+    const grisRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16, pane: 'shadowPane' });
+    const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: esriAttr + ' — Esri, HERE, Garmin, USGS', maxZoom: 19 });
     const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
     const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Esri, Maxar, Earthstar Geographics', maxZoom: 19 });
-    carto.addTo(map);
-    L.control.layers({ 'Mapa claro': carto, 'OpenStreetMap': osm, 'Satélite': esri }, null, { position: 'topright' }).addTo(map);
+      attribution: esriAttr + ' — Esri, Maxar, Earthstar Geographics', maxZoom: 19 });
+    const claro = L.layerGroup([gris, grisRef]).addTo(map);
+    L.control.layers({ 'Gris claro': claro, 'Topográfico': topo, 'OpenStreetMap': osm, 'Satélite': esri }, null, { position: 'topright' }).addTo(map);
     L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
     legendCtl = L.control({ position: 'bottomright' });
     legendCtl.onAdd = () => { const d = L.DomUtil.create('div', 'legend'); d.id = 'legend'; return d; };
