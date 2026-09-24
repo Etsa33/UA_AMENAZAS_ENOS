@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amenazas UA · Geoportal MTDH</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><span>MTDH</span></div>
+    <div class="brand-text">
+      <h1>Unidades de Atención expuestas a amenazas · Evento El Niño</h1>
+      <p>Geoportal MTDH · Dirección de Gestión de Información y Datos · Corte <span id="corte">agosto 2026</span></p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn btn-yellow" id="btnExport" title="Descargar el reporte de los filtros actuales">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 19h16" /></svg>
+      Exportar Excel
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ============ PANEL IZQUIERDO ============ -->
+  <aside class="panel panel-left">
+    <section class="card">
+      <h2><span class="dot"></span>Filtros territoriales</h2>
+      <label>Provincia<select id="fProv"><option value="">Todas</option></select></label>
+      <label>Cantón<select id="fCan" disabled><option value="">Todos</option></select></label>
+      <label>Parroquia<select id="fPar" disabled><option value="">Todas</option></select></label>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot"></span>Servicio y modalidad</h2>
+      <label>Servicio<select id="fServ"><option value="">Todos</option></select></label>
+      <label>Modalidad<select id="fMod"><option value="">Todas</option></select></label>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot"></span>Mapa de coropletas</h2>
+      <div class="layer-list" id="layerList"></div>
+      <p class="sub">Categorías a visualizar</p>
+      <div class="checks" id="fCat">
+        <label class="chk"><input type="checkbox" value="1" checked> Media</label>
+        <label class="chk"><input type="checkbox" value="2" checked> Alta</label>
+        <label class="chk"><input type="checkbox" value="3" checked> Muy alta</label>
+      </div>
+      <div class="seg" role="group" aria-label="Indicador">
+        <button class="seg-btn active" data-metric="n">N.º de UA</button>
+        <button class="seg-btn" data-metric="p">% de UA</button>
+      </div>
+    </section>
+
+    <button class="btn btn-outline full" id="btnClear">Limpiar filtros</button>
+    <p class="note">Se consideran las categorías de susceptibilidad media, alta y muy alta. Las UA de parroquias urbanas se agregan en la cabecera cantonal del límite parroquial.</p>
+  </aside>
+
+  <!-- ============ MAPA ============ -->
+  <section class="map-wrap">
+    <div id="map"></div>
+    <div class="map-chip" id="mapChip"></div>
+    <div class="breadcrumb" id="crumb"></div>
+  </section>
+
+  <!-- ============ PANEL DERECHO ============ -->
+  <aside class="panel panel-right">
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-v" id="kUA">–</span><span class="kpi-l">UA filtradas</span></div>
+      <div class="kpi"><span class="kpi-v" id="kExp">–</span><span class="kpi-l" id="kExpL">UA expuestas</span></div>
+      <div class="kpi"><span class="kpi-v" id="kUsr">–</span><span class="kpi-l">Usuarios en UA expuestas</span></div>
+    </div>
+    <p class="note tight" id="kNote"></p>
+
+    <section class="card">
+      <h2><span class="dot"></span>UA por categoría de susceptibilidad</h2>
+      <p class="note" style="margin:-4px 0 10px">Según los filtros territoriales, de servicio y modalidad.</p>
+      <div id="stats"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot"></span><span id="topTitle">Territorios con más UA expuestas</span></h2>
+      <div id="top"></div>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot">
+  Fuente: Reporte territorial de Unidades de Atención (SIIMDH), agosto 2026 · Susceptibilidad a inundaciones y sequía (MAGAP, 2015) · Movimientos en masa (SNGR, 2011) · Incendios forestales (SNGR) · Límites DPA. Elaboración: DGID – MTDH.
+</footer>
+
+<div class="loading" id="loading"><div class="spinner"></div>Cargando datos…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
