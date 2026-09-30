@@ -152,8 +152,8 @@
     $('fReg').querySelectorAll('input').forEach((i) => (i.onchange = () => {
       setRegs([...$('fReg').querySelectorAll('input:checked')].map((x) => x.value)); update(true);
     }));
-    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; renderPoints(); };
-    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; renderPoints(); };
+    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; renderPoints(); updateSelection(); };
+    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; renderPoints(); updateSelection(); };
     $('btnDraw').onclick = () => { $('btnDraw').classList.add('active'); drawHandler.enable(); };
     $('btnClearSel').onclick = () => clearSelection();
     $('btnClear').onclick = clearAll;
@@ -453,14 +453,28 @@
     }
     return inside;
   }
-  const selected = () => (state.poly ? filtered().filter((u) => u.lat != null && inPoly([u.lon, u.lat], state.poly)) : []);
+  // solo se seleccionan las UA de las capas visibles (expuestas / no expuestas)
+  const visible = (u) => (exposed(u) ? state.showExp : state.showNoExp);
+  const selected = () => (state.poly ? filtered().filter((u) => u.lat != null && visible(u) && inPoly([u.lon, u.lat], state.poly)) : []);
+  function layersTxt() {
+    const hz = `${HAZ[state.layer].name.toLowerCase()} (${catsTxt()})`;
+    if (state.showExp && state.showNoExp) return `Expuestas y no expuestas a ${hz}`;
+    if (state.showExp) return `Expuestas a ${hz}`;
+    if (state.showNoExp) return `No expuestas a ${hz}`;
+    return 'Ninguna capa de UA activa';
+  }
   function updateSelection() {
     if (!state.poly) {
       $('selInfo').textContent = 'Dibuje un polígono sobre el mapa para seleccionar las UA que quedan dentro (según los filtros activos).';
       $('btnExportSel').disabled = true; $('btnClearSel').disabled = true; return;
     }
     const s = selected(), e = s.filter((u) => exposed(u)).length;
-    $('selInfo').innerHTML = `<b>${fmt(s.length)}</b> UA seleccionadas, de las cuales <b>${fmt(e)}</b> están expuestas a ${HAZ[state.layer].name.toLowerCase()}.`;
+    const hz = HAZ[state.layer].name.toLowerCase();
+    $('selInfo').innerHTML = !state.showExp && !state.showNoExp
+      ? 'Active al menos una capa de UA (expuestas o no expuestas) para seleccionar.'
+      : `<b>${fmt(s.length)}</b> UA seleccionadas` + (state.showExp && state.showNoExp
+        ? `, de las cuales <b>${fmt(e)}</b> están expuestas a ${hz}.`
+        : state.showExp ? ` (solo expuestas a ${hz}).` : ` (solo no expuestas a ${hz}).`);
     $('btnExportSel').disabled = !s.length; $('btnClearSel').disabled = false;
   }
   function clearSelection(silent) {
@@ -493,6 +507,7 @@
         reg: state.regs.length === 4 ? 'Todas' : state.regs.join(', '),
         serv: state.serv !== '' ? tc(DATA.dict.serv[+state.serv]) : 'Todos', mod: state.mod !== '' ? tc(DATA.dict.mod[+state.mod]) : 'Todas',
         selec: bySelection ? 'Polígono dibujado en el mapa' : 'Filtros aplicados',
+        capas: layersTxt(),
         susc: `${HAZ[state.layer].name} (${catsTxt()})`,
       };
       if (bySelection) addDataSheet(wb, imgId, 'UA_POLYGON', titulo, info, sel, false, true);
@@ -537,11 +552,12 @@
     headLine(ws, 9, 'Filtro Cantón:', info.can);
     headLine(ws, 10, 'Filtro Parroquia:', info.par);
     if (afectadas) headLine(ws, 11, 'Susceptibilidad:', info.susc);
+    if (poligono) headLine(ws, 11, 'UA incluidas:', info.capas);
     sideLine(ws, 8, 'Región:', info.reg);
     sideLine(ws, 9, 'Servicio:', info.serv);
     sideLine(ws, 10, 'Modalidad:', info.mod);
     if (poligono) sideLine(ws, 11, 'Selección:', info.selec);
-    const hr = afectadas ? 13 : 12;
+    const hr = afectadas || poligono ? 13 : 12;
     const cols = MATRIZ.cols;
     const h = ws.getRow(hr); h.height = 42;
     cols.forEach((c, j) => {
