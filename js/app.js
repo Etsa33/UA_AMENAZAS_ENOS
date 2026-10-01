@@ -36,12 +36,25 @@
   const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+  function loadJson(name, path) {
+    const embedded = document.getElementById(`embedded-${name}`);
+    return embedded ? Promise.resolve(JSON.parse(embedded.textContent)) : fetch(path).then((r) => r.json());
+  }
+  function loadBinary(name, path) {
+    const embedded = document.getElementById(`embedded-${name}`);
+    if (!embedded) return fetch(path).then((r) => r.arrayBuffer());
+    const raw = atob(embedded.textContent.trim());
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return Promise.resolve(bytes.buffer);
+  }
+
   // ---------------- carga ----------------
   Promise.all([
-    fetch('data/ua.json').then((r) => r.json()),
-    fetch('data/provincias.json').then((r) => r.json()),
-    fetch('data/cantones.json').then((r) => r.json()),
-    fetch('data/diccionario.json').then((r) => r.json()),
+    loadJson('ua', 'data/ua.json'),
+    loadJson('provincias', 'data/provincias.json'),
+    loadJson('cantones', 'data/cantones.json'),
+    loadJson('diccionario', 'data/diccionario.json'),
   ]).then(([ua, prov, can, dic]) => {
     DATA = ua; DIC = dic;
     GEO.prov = prov; GEO.can = can;
@@ -63,7 +76,7 @@
 
   function loadParroquias() {
     if (GEO.par) return Promise.resolve(GEO.par);
-    return fetch('data/parroquias.json').then((r) => r.json()).then((g) => {
+    return loadJson('parroquias', 'data/parroquias.json').then((g) => {
       GEO.par = g;
       g.features.forEach((f) => (NAMES.par[f.properties.DPA_PARROQ] = f.properties.DPA_DESPAR));
       return g;
@@ -479,8 +492,8 @@
     const btn = bySelection ? $('btnExportSel') : $('btnExport');
     const old = btn.innerHTML; btn.disabled = true; btn.textContent = 'Generando…';
     try {
-      if (!MATRIZ) MATRIZ = await fetch('data/ua_matriz.json').then((r) => r.json());
-      const bannerBuf = await fetch('data/banner.png').then((r) => r.arrayBuffer());
+      if (!MATRIZ) MATRIZ = await loadJson('ua-matriz', 'data/ua_matriz.json');
+      const bannerBuf = await loadBinary('banner', 'data/banner.png');
       const sel = bySelection ? selected() : filtered();
       const afect = sel.filter((u) => exposed(u));
       const wb = new ExcelJS.Workbook();

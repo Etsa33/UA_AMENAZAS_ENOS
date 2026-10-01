@@ -26,6 +26,16 @@ Leaflet 1.9.4 · Leaflet.markercluster 1.5.3 · Leaflet.draw 1.0.4 · ExcelJS 4.
 Para probar localmente: `python -m http.server 8000` en la carpeta y abrir http://localhost:8000
 (no funciona abriendo `index.html` con doble clic).
 
+## HTML autocontenido
+
+`mapa_autocontenido.html` contiene CSS, JavaScript, librerías, fuentes, imágenes y todos los JSON.
+Puede copiarse a cualquier carpeta, abrirse directamente con doble clic o servirse como un archivo
+estático desde FastAPI. Solo las teselas de los mapas base Esri/OpenStreetMap requieren Internet.
+
+Para regenerarlo después de actualizar el código o los datos:
+
+    python scripts/build_html_autocontenido.py
+
 ## Actualizar el corte mensual
 
     pip install openpyxl pyproj
