@@ -117,7 +117,7 @@
 
     // polígono de selección
     drawHandler = new L.Draw.Polygon(map, { allowIntersection: false, showArea: false,
-      shapeOptions: { color: '#2D2D93', weight: 2.5, fillColor: '#FFC600', fillOpacity: 0.12, dashArray: '6 4' } });
+      shapeOptions: { color: '#454193', weight: 2.5, fillColor: '#FFC60A', fillOpacity: 0.12, dashArray: '6 4' } });
     map.on(L.Draw.Event.CREATED, (e) => {
       if (polyLayer) map.removeLayer(polyLayer);
       polyLayer = e.layer.addTo(map);
@@ -165,8 +165,8 @@
     $('fReg').querySelectorAll('input').forEach((i) => (i.onchange = () => {
       setRegs([...$('fReg').querySelectorAll('input:checked')].map((x) => x.value)); update(true);
     }));
-    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; renderPoints(); };
-    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; renderPoints(); };
+    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; renderPoints(); updateSelection(); };
+    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; renderPoints(); updateSelection(); };
     $('btnDraw').onclick = () => { $('btnDraw').classList.add('active'); drawHandler.enable(); };
     $('btnClearSel').onclick = () => clearSelection();
     $('btnClear').onclick = clearAll;
@@ -303,7 +303,7 @@
     geoLayer = L.geoJSON({ type: 'FeatureCollection', features: feats }, {
       style: (f) => {
         const code = f.properties[lv.code], x = val(code), col = colorOf(x), sel = state.par && code === state.par;
-        return { color: sel ? '#FFC600' : '#2b2b3a', weight: sel ? 3.5 : 0.8, fillOpacity: col ? 0.8 : 0.35, fillColor: col || '#d9dce4', dashArray: col ? null : '3' };
+        return { color: sel ? '#FFC60A' : '#2b2b3a', weight: sel ? 3.5 : 0.8, fillOpacity: col ? 0.8 : 0.35, fillColor: col || '#d9dce4', dashArray: col ? null : '3' };
       },
       onEachFeature: (f, layer) => {
         const code = f.properties[lv.code], a = agg[code] || { tot: 0, exp: 0, usr: 0, usrExp: 0 };
@@ -313,7 +313,7 @@
             `Usuarios en UA expuestas: <b>${fmt(a.usrExp)}</b> (${fpct(pct(a.usrExp, a.usr))})` : 'Sin UA con los filtros actuales'),
           { sticky: true, className: 'tt' });
         layer.on({
-          mouseover: (e) => e.target.setStyle({ weight: 2.5, color: '#2D2D93' }),
+          mouseover: (e) => e.target.setStyle({ weight: 2.5, color: '#454193' }),
           mouseout: (e) => geoLayer.resetStyle(e.target),
           click: () => drill(lv.key, code),
         });
@@ -466,14 +466,28 @@
     }
     return inside;
   }
-  const selected = () => (state.poly ? filtered().filter((u) => u.lat != null && inPoly([u.lon, u.lat], state.poly)) : []);
+  // solo se seleccionan las UA de las capas visibles (expuestas / no expuestas)
+  const visible = (u) => (exposed(u) ? state.showExp : state.showNoExp);
+  const selected = () => (state.poly ? filtered().filter((u) => u.lat != null && visible(u) && inPoly([u.lon, u.lat], state.poly)) : []);
+  function layersTxt() {
+    const hz = `${HAZ[state.layer].name.toLowerCase()} (${catsTxt()})`;
+    if (state.showExp && state.showNoExp) return `Expuestas y no expuestas a ${hz}`;
+    if (state.showExp) return `Expuestas a ${hz}`;
+    if (state.showNoExp) return `No expuestas a ${hz}`;
+    return 'Ninguna capa de UA activa';
+  }
   function updateSelection() {
     if (!state.poly) {
       $('selInfo').textContent = 'Dibuje un polígono sobre el mapa para seleccionar las UA que quedan dentro (según los filtros activos).';
       $('btnExportSel').disabled = true; $('btnClearSel').disabled = true; return;
     }
     const s = selected(), e = s.filter((u) => exposed(u)).length;
-    $('selInfo').innerHTML = `<b>${fmt(s.length)}</b> UA seleccionadas, de las cuales <b>${fmt(e)}</b> están expuestas a ${HAZ[state.layer].name.toLowerCase()}.`;
+    const hz = HAZ[state.layer].name.toLowerCase();
+    $('selInfo').innerHTML = !state.showExp && !state.showNoExp
+      ? 'Active al menos una capa de UA (expuestas o no expuestas) para seleccionar.'
+      : `<b>${fmt(s.length)}</b> UA seleccionadas` + (state.showExp && state.showNoExp
+        ? `, de las cuales <b>${fmt(e)}</b> están expuestas a ${hz}.`
+        : state.showExp ? ` (solo expuestas a ${hz}).` : ` (solo no expuestas a ${hz}).`);
     $('btnExportSel').disabled = !s.length; $('btnClearSel').disabled = false;
   }
   function clearSelection(silent) {
@@ -483,7 +497,7 @@
   }
 
   // ---------------- exportación Excel (formato UA_AGO26_FILTRO) ----------------
-  const NAVY = 'FF002060', WHITE = 'FFFFFFFF';
+  const NAVY = 'FF454193', WHITE = 'FFFFFFFF';
   const COLW = [11.8, 11.5, 13, 13, 13, 13, 13, 30, 11.5, 13, 13, 13, 13, 11.5, 13, 13, 13, 13, 13, 13, 13, 13, 12.2, 11.5, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 18.5, 13, 13, 13, 17.3];
   const hair = { style: 'hair', color: { argb: 'FF000000' } };
   const HAIR = { top: hair, left: hair, bottom: hair, right: hair };
@@ -506,6 +520,7 @@
         reg: state.regs.length === 4 ? 'Todas' : state.regs.join(', '),
         serv: state.serv !== '' ? tc(DATA.dict.serv[+state.serv]) : 'Todos', mod: state.mod !== '' ? tc(DATA.dict.mod[+state.mod]) : 'Todas',
         selec: bySelection ? 'Polígono dibujado en el mapa' : 'Filtros aplicados',
+        capas: layersTxt(),
         susc: `${HAZ[state.layer].name} (${catsTxt()})`,
       };
       if (bySelection) addDataSheet(wb, imgId, 'UA_POLYGON', titulo, info, sel, false, true);
@@ -524,7 +539,7 @@
   }
 
   function putBanner(ws, imgId) {
-    ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 591, height: 97 }, editAs: 'oneCell' });
+    ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 557, height: 131 }, editAs: 'oneCell' });
     ws.getRow(5).height = 15.5; ws.getRow(6).height = 15.5;
   }
   function headLine(ws, r, labelTxt, value) {
@@ -550,11 +565,12 @@
     headLine(ws, 9, 'Filtro Cantón:', info.can);
     headLine(ws, 10, 'Filtro Parroquia:', info.par);
     if (afectadas) headLine(ws, 11, 'Susceptibilidad:', info.susc);
+    if (poligono) headLine(ws, 11, 'UA incluidas:', info.capas);
     sideLine(ws, 8, 'Región:', info.reg);
     sideLine(ws, 9, 'Servicio:', info.serv);
     sideLine(ws, 10, 'Modalidad:', info.mod);
     if (poligono) sideLine(ws, 11, 'Selección:', info.selec);
-    const hr = afectadas ? 13 : 12;
+    const hr = afectadas || poligono ? 13 : 12;
     const cols = MATRIZ.cols;
     const h = ws.getRow(hr); h.height = 42;
     cols.forEach((c, j) => {

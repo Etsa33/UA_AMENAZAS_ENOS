@@ -1,5 +1,5 @@
 :root{
-  --azul:#2D2D93; --azul-2:#23237a; --azul-soft:#eceefb; --amarillo:#FFC600; --rojo:#EF142B; --morado:#8A84D6;
+  --azul:#454193; --azul-2:#35327a; --azul-soft:#eceefb; --amarillo:#FFC60A; --rojo:#ED1C26; --morado:#8A84D6;
   --tx:#1f2330; --tx-2:#5a6072; --line:#e3e6ef; --bg:#f4f6fb; --card:#ffffff;
   --r:10px; --shadow:0 1px 3px rgba(20,24,60,.08),0 4px 14px rgba(20,24,60,.05);
 }
@@ -36,7 +36,7 @@ button,select,input{font-family:inherit}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--amarillo);flex:none}
 label{display:block;font-size:12px;font-weight:600;color:var(--tx-2);margin-bottom:9px}
 select{display:block;width:100%;margin-top:4px;padding:8px 10px;font-size:13px;color:var(--tx);background:#fff;border:1px solid #cfd4e2;border-radius:7px;outline:none}
-select:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(45,45,147,.15)}
+select:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(69,65,147,.15)}
 select:disabled{background:#f1f2f6;color:#9aa0b0}
 .note{font-size:11px;color:var(--tx-2);line-height:1.45;margin:0}
 .note.tight{margin-top:-6px}
@@ -137,7 +137,7 @@ select:disabled{background:#f1f2f6;color:#9aa0b0}
 .clu{border-radius:50%;display:grid;place-items:center;font:700 11px Montserrat,sans-serif;color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.55)}
 .clu.exp{background:#d9469f;border:2px solid #a3137c}
 .clu.noexp{background:var(--morado);border:2px solid #5d56b3}
-.leaflet-tooltip.code{background:rgba(255,255,255,.92);border:1px solid #c9b8e4;border-radius:4px;padding:1px 4px;font:600 10px Montserrat,sans-serif;color:#2D2D93;box-shadow:none}
+.leaflet-tooltip.code{background:rgba(255,255,255,.92);border:1px solid #c9b8e4;border-radius:4px;padding:1px 4px;font:600 10px Montserrat,sans-serif;color:#454193;box-shadow:none}
 .leaflet-tooltip.code:before{display:none}
 #map:not(.show-codes) .leaflet-tooltip.code{display:none}
 .pop h3{margin:0 0 2px;font-size:13px;color:var(--azul)}
@@ -153,6 +153,6 @@ select:disabled{background:#f1f2f6;color:#9aa0b0}
 /* ---- identidad institucional ---- */
 .logo-mtdh{height:38px;width:auto;flex:none}
 .brand-sep{width:1.5px;align-self:stretch;background:rgba(255,255,255,.55);margin:2px 2px;flex:none}
-.logo-gob{height:46px;width:auto;flex:none}
-@media (max-width:1100px){.logo-gob{height:34px}.logo-mtdh{height:28px}}
+.logo-gob{height:48px;width:auto;flex:none}
+@media (max-width:1100px){.logo-gob{height:36px}}
 @media (max-width:700px){.logo-gob{display:none}}

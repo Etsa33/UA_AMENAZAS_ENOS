@@ -12,7 +12,7 @@ Aplicación web estática (HTML/CSS/JS + Leaflet), publicada en GitHub Pages.
 - `data/ua_matriz.json` – matriz completa (47 variables, tal cual) que alimenta el reporte Excel
 - `data/diccionario.json` – pestaña DICCIONARIO_VARIABLES (etiquetas del popup y hoja del reporte)
 - `data/banner.png` – encabezado institucional del reporte Excel
-- `img/logo_mtdh.png`, `img/logo_gobierno.png` – logos de la cabecera
+- `img/logo_encabezado.png` – logo institucional de la cabecera
 - `data/provincias.json`, `data/cantones.json`, `data/parroquias.json` – límites DPA (MDG, 2026) simplificados
 - `scripts/preparar_ua.py` – genera los tres archivos de datos a partir de la matriz mensual
 
