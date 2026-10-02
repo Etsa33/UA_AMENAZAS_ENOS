@@ -33,7 +33,7 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n).toLocaleString('es-EC');
   const pct = (a, b) => (b ? (100 * a) / b : 0);
-  const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
+ const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   // ---------------- carga ----------------
