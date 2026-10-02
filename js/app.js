@@ -27,7 +27,7 @@
 
   const state = { prov: '', can: '', par: '', serv: '', mod: '', cats: [1, 2, 3], regs: ALL_REG.slice(), layer: 'inund', metric: 'n',
     showExp: true, showNoExp: false, poly: null, showLayer: true, legendMin: false };
-  let DATA, UA = [], GEO = {}, DIC = null, MATRIZ = null, map, geoLayer, legendCtl, cluExp, cluNoExp, drawHandler, polyLayer;
+  let DATA, UA = [], GEO = {}, DIC = null, MATRIZ = null, map, geoLayer, legendCtl, cluAll, drawHandler, polyLayer;
   const NAMES = { prov: {}, can: {}, par: {} };
 
   const $ = (id) => document.getElementById(id);
@@ -105,13 +105,20 @@
     north.addTo(map);
 
     // puntos de UA con clusters (expuestas / no expuestas)
-    const cluOpts = (cls) => ({
+    // un solo grupo de clusters: cuando hay UA expuestas y no expuestas juntas, el cluster se divide en dos mitades (no se sobreponen)
+    cluAll = L.markerClusterGroup({
       showCoverageOnHover: false, maxClusterRadius: 45, disableClusteringAtZoom: 15, chunkedLoading: true,
-      iconCreateFunction: (c) => { const n = c.getChildCount(), s = n < 10 ? 26 : n < 100 ? 32 : n < 1000 ? 38 : 44;
-        return L.divIcon({ html: `<div class="clu ${cls}" style="width:${s}px;height:${s}px">${n}</div>`, className: '', iconSize: [s, s] }); },
-    });
-    cluExp = L.markerClusterGroup(cluOpts('exp'));
-    cluNoExp = L.markerClusterGroup(cluOpts('noexp'));
+      iconCreateFunction: (c) => {
+        let e = 0, ne = 0;
+        c.getAllChildMarkers().forEach((m) => (m.options.kind === 'exp' ? e++ : ne++));
+        if (e && ne) {
+          const w = 22 + 7 * (String(fmt(e)).length + String(fmt(ne)).length);
+          return L.divIcon({ html: `<div class="clu-mix" style="width:${w}px" title="${fmt(e)} UA expuestas · ${fmt(ne)} UA no expuestas"><span class="exp">${fmt(e)}</span><span class="noexp">${fmt(ne)}</span></div>`, className: '', iconSize: [w, 26] });
+        }
+        const n = e + ne, sz = n < 10 ? 26 : n < 100 ? 32 : n < 1000 ? 38 : 44;
+        return L.divIcon({ html: `<div class="clu ${e ? 'exp' : 'noexp'}" style="width:${sz}px;height:${sz}px">${n}</div>`, className: '', iconSize: [sz, sz] });
+      },
+    }).addTo(map);
     // código de la UA visible desde ~1:20.000 (zoom 15)
     const codes = () => map.getContainer().classList.toggle('show-codes', map.getZoom() >= 15);
     map.on('zoomend', codes); codes();
@@ -166,8 +173,8 @@
     $('fReg').querySelectorAll('input').forEach((i) => (i.onchange = () => {
       setRegs([...$('fReg').querySelectorAll('input:checked')].map((x) => x.value)); update(true);
     }));
-    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; renderPoints(); updateSelection(); };
-    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; renderPoints(); updateSelection(); };
+    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; update(); };
+    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; update(); };
     $('btnDraw').onclick = () => { $('btnDraw').classList.add('active'); drawHandler.enable(); };
     $('btnClearSel').onclick = () => clearSelection();
     $('btnClear').onclick = clearAll;
@@ -351,10 +358,13 @@
       lo = state.metric === 'n' ? b + 1 : b + 0.1;
     });
     const allC = state.cats.length === HAZ[state.layer].max;
-    const pts = `<div class="row" style="margin-top:6px"><span class="pt pt-exp"></span>UA expuesta</div><div class="row"><span class="pt pt-noexp"></span>UA no expuesta</div>`;
+    // en la leyenda solo aparecen las capas de UA activas
+    const pts = (state.showExp ? '<div class="row"><span class="pt pt-exp"></span>UA expuesta</div>' : '') +
+      (state.showNoExp ? '<div class="row"><span class="pt pt-noexp"></span>UA no expuesta</div>' : '') +
+      (state.showExp && state.showNoExp ? '<div class="row"><span class="clu-mix lg"><span class="exp">n</span><span class="noexp">n</span></span>Agrupadas: expuestas | no expuestas</div>' : '');
     $('legendBody').innerHTML = `<h4>${HAZ[state.layer].name}<br><span style="font-weight:500;color:#5a6072">${unit} expuestas por ${lv.label}${allC ? '' : '<br>Categorías: ' + catsTxt()}</span></h4>` +
       (state.showLayer ? `<div class="row"><span class="sw" style="background:#fff"></span>Sin UA expuestas</div>${rows}` +
-        `<div class="row"><span class="sw none"></span>Sin UA registradas</div>` : '<div class="row" style="color:#5a6072">Capa desactivada (solo mapa base)</div>') + pts;
+        `<div class="row"><span class="sw none"></span>Sin UA registradas</div>` : '<div class="row" style="color:#5a6072">Capa desactivada (solo mapa base)</div>') + (pts ? '<div style="height:4px"></div>' + pts : '');
   }
 
   // título del mapa: «Provincia: Azuay · Cantón: Cuenca · Parroquia: … · Servicio: …»
@@ -445,7 +455,7 @@
       exp: L.divIcon({ html: '<div class="ua-dot exp" style="width:12px;height:12px"></div>', className: '', iconSize: [12, 12] }),
       noexp: L.divIcon({ html: '<div class="ua-dot noexp" style="width:12px;height:12px"></div>', className: '', iconSize: [12, 12] }),
     };
-    const m = L.marker([u.lat, u.lon], { icon: ICONS[kind] });
+    const m = L.marker([u.lat, u.lon], { icon: ICONS[kind], kind });
     m.bindTooltip(u.codigo, { permanent: true, direction: 'right', offset: [6, 0], className: 'code' });
     m.bindPopup(() => popupHtml(u), { maxWidth: 380 });
     return m;
@@ -454,11 +464,11 @@
     const rows = filtered().filter((u) => u.lat != null);
     const e = rows.filter((u) => exposed(u)), ne = rows.filter((u) => !exposed(u));
     $('nExp').textContent = fmt(e.length); $('nNoExp').textContent = fmt(ne.length);
-    cluExp.clearLayers(); cluNoExp.clearLayers();
-    if (state.showNoExp) { cluNoExp.addLayers(ne.map((u) => marker(u, 'noexp'))); if (!map.hasLayer(cluNoExp)) map.addLayer(cluNoExp); }
-    else if (map.hasLayer(cluNoExp)) map.removeLayer(cluNoExp);
-    if (state.showExp) { cluExp.addLayers(e.map((u) => marker(u, 'exp'))); if (!map.hasLayer(cluExp)) map.addLayer(cluExp); }
-    else if (map.hasLayer(cluExp)) map.removeLayer(cluExp);
+    cluAll.clearLayers();
+    const ms = [];
+    if (state.showNoExp) ne.forEach((u) => ms.push(marker(u, 'noexp')));
+    if (state.showExp) e.forEach((u) => ms.push(marker(u, 'exp')));
+    cluAll.addLayers(ms);
   }
 
   // ---------------- selección por polígono ----------------
