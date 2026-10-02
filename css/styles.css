@@ -173,3 +173,11 @@ select:disabled{background:#f1f2f6;color:#9aa0b0}
 .map-export button{border:1.5px solid var(--azul);background:#fff;color:var(--azul);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer}
 .map-export button:hover{background:var(--azul-soft)}
 .map-export button:disabled{opacity:.5;cursor:default}
+
+/* ---- clusters mixtos (expuestas | no expuestas) ---- */
+.clu-mix{display:flex;height:26px;border-radius:13px;overflow:hidden;font:700 11px Montserrat,sans-serif;color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.55)}
+.clu-mix span{flex:1 1 auto;display:grid;place-items:center;padding:0 5px}
+.clu-mix .exp{background:#d9469f}
+.clu-mix .noexp{background:var(--morado)}
+.clu-mix.lg{height:13px;width:34px;border-radius:7px;font-size:8px;box-shadow:none;flex:none}
+.clu-mix.lg span{padding:0}
