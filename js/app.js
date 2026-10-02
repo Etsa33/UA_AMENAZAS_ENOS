@@ -362,7 +362,7 @@
     const pts = (state.showExp ? '<div class="row"><span class="pt pt-exp"></span>UA expuesta</div>' : '') +
       (state.showNoExp ? '<div class="row"><span class="pt pt-noexp"></span>UA no expuesta</div>' : '') +
       (state.showExp && state.showNoExp ? '<div class="row"><span class="clu-mix lg"><span class="exp">n</span><span class="noexp">n</span></span>Agrupadas: expuestas | no expuestas</div>' : '');
-    $('legendBody').innerHTML = `<h4>${HAZ[state.layer].name}<br><span style="font-weight:500;color:#5a6072">${unit} expuestas por ${lv.label}${allC ? '' : '<br>Categorías: ' + catsTxt()}</span></h4>` +
+    $('legendBody').innerHTML = `<h4>${state.layer === 'multi' ? '' : 'Susceptibilidad a '}${HAZ[state.layer].name}<br><span style="font-weight:500;color:#5a6072">${unit} expuestas por ${lv.label}${allC ? '' : '<br>Categorías: ' + catsTxt()}</span></h4>` +
       (state.showLayer ? `<div class="row"><span class="sw" style="background:#fff"></span>Sin UA expuestas</div>${rows}` +
         `<div class="row"><span class="sw none"></span>Sin UA registradas</div>` : '<div class="row" style="color:#5a6072">Capa desactivada (solo mapa base)</div>') + (pts ? '<div style="height:4px"></div>' + pts : '');
   }
