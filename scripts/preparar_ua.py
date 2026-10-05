@@ -9,7 +9,7 @@ Genera:
     data/ua_matriz.json   la matriz completa (todas las columnas, tal cual) para el reporte Excel
     data/diccionario.json pestaña DICCIONARIO_VARIABLES (encabezado, notas y variables)
 """
-import sys, json
+import sys, json, re
 import openpyxl
 from pyproj import Transformer
 
@@ -53,6 +53,7 @@ for i, r in enumerate(rows):
         cat(r['susc_inundacion']), cat(r['susc_movimientos_masa']), cat(r['susc_sequia']), cat(r['susc_inc_forestales']),
         round(lat, 6) if lat else None, round(lon, 6) if lon else None,
         r['dpa_despro'], r['dpa_descan'], r['dpa_despar'],
+        int(r['hombre'] or 0), int(r['mujer'] or 0),
     ])
 
 json.dump({'corte': corte, 'dict': d, 'servMod': sorted({(o[2], o[3]) for o in out}), 'rows': out},
@@ -70,7 +71,9 @@ for r in dic.iter_rows(values_only=True):
     vals = [v for v in r if v is not None]
     if not vals: continue
     if isinstance(vals[0], (int, float)) and len(vals) >= 3:
-        variables.append([int(vals[0])] + [str(v) for v in vals[1:4]])
+        v = [int(vals[0])] + [str(x) for x in vals[1:4]]
+        v[2] = re.sub(r'\s*\(excluye mujeres gestantes\)', '', v[2], flags=re.I).strip()   # etiquetas: Mujer, Total
+        variables.append(v)
     elif vals[0] == 'No. campo' or vals == ['INICIO']:
         continue
     else:

@@ -183,13 +183,13 @@
 [
 25,
 "mujer",
-"Mujer\n(excluye mujeres gestantes)",
+"Mujer",
 "Indica el número de usuarias mujeres atendidas al mes de corte en la Unidad de Atención."
 ],
 [
 26,
 "total",
-"Total\n(excluye mujeres gestantes)",
+"Total",
 "Indica la totalidad de usuarios atendidos al mes de corte en la Unidad de Atención."
 ],
 [

@@ -1,4 +1,4 @@
-/* Geoportal – Unidades de Atención (UA) expuestas a amenazas (MTDH / DGID) · v3 */
+/* Geoportal – Unidades de Atención ubicadas en zonas susceptibles a amenazas (MTDH / DGID) · v5 */
 (function () {
   'use strict';
 
@@ -26,14 +26,14 @@
   const DEFAULT_REG = { inund: ALL_REG, mm: ALL_REG, multi: ALL_REG, seq: ['Sierra', 'Amazonía'], inc: ['Sierra', 'Amazonía'] };
 
   const state = { prov: '', can: '', par: '', serv: '', mod: '', cats: [1, 2, 3], regs: ALL_REG.slice(), layer: 'inund', metric: 'n',
-    showExp: true, showNoExp: false, poly: null };
-  let DATA, UA = [], GEO = {}, DIC = null, MATRIZ = null, map, geoLayer, legendCtl, cluExp, cluNoExp, drawHandler, polyLayer;
+    showExp: true, showNoExp: false, poly: null, showLayer: true, legendMin: false };
+  let DATA, UA = [], GEO = {}, DIC = null, MATRIZ = null, map, geoLayer, legendCtl, cluAll, drawHandler, polyLayer;
   const NAMES = { prov: {}, can: {}, par: {} };
 
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n).toLocaleString('es-EC');
   const pct = (a, b) => (b ? (100 * a) / b : 0);
-  const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
+ const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function loadJson(name, path) {
@@ -63,10 +63,9 @@
     UA = ua.rows.map((r, i) => ({
       i, codigo: r[0], nombre: r[1], serv: r[2], mod: r[3], prov: r[4], can: r[5], par: r[6], parNombre: r[7],
       ud: r[8], tipo: r[9], area: r[10], adm: r[11], usuarios: r[12], inund: r[13], mm: r[14], seq: r[15], inc: r[16],
-      lat: r[17], lon: r[18], despro: r[19], descan: r[20], despar: r[21],
+      lat: r[17], lon: r[18], despro: r[19], descan: r[20], despar: r[21], hombre: r[22], mujer: r[23],
     }));
     UA.forEach((u) => { u.multi = u.inund > 0 || u.mm > 0 ? 1 : 0; u.reg = REG_OF[u.prov] || ''; });
-    $('corte').textContent = ua.corte.toLowerCase();
     initMap(); initControls(); syncCats(true); setRegs(DEFAULT_REG[state.layer]); update(true);
     $('loading').classList.add('hide');
   }).catch((e) => {
@@ -85,32 +84,54 @@
 
   // ---------------- mapa ----------------
   function initMap() {
-    map = L.map('map', { zoomControl: true, minZoom: 5, maxZoom: 19, attributionControl: true }).setView([-1.5, -78.4], 7);
+    map = L.map('map', { preferCanvas: true, zoomControl: true, minZoom: 5, maxZoom: 19, attributionControl: true }).setView([-1.5, -78.4], 7);
     const esriAttr = 'Tiles &copy; Esri';
     const gris = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-      attribution: esriAttr + ' — Esri, HERE, Garmin, &copy; OpenStreetMap', maxNativeZoom: 16, maxZoom: 19 });
+      attribution: esriAttr + ' — Esri, HERE, Garmin, &copy; OpenStreetMap', maxNativeZoom: 16, maxZoom: 19, crossOrigin: 'anonymous' });
     const grisRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-      maxNativeZoom: 16, maxZoom: 19, pane: 'shadowPane' });
+      maxNativeZoom: 16, maxZoom: 19, pane: 'shadowPane', crossOrigin: 'anonymous' });
     const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-      attribution: esriAttr + ' — Esri, HERE, Garmin, USGS', maxZoom: 19 });
-    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
+      attribution: esriAttr + ' — Esri, HERE, Garmin, USGS', maxZoom: 19, crossOrigin: 'anonymous' });
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19, crossOrigin: 'anonymous' });
     const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: esriAttr + ' — Esri, Maxar, Earthstar Geographics', maxZoom: 19 });
+      attribution: esriAttr + ' — Esri, Maxar, Earthstar Geographics', maxZoom: 19, crossOrigin: 'anonymous' });
     const claro = L.layerGroup([gris, grisRef]).addTo(map);
     L.control.layers({ 'Gris claro': claro, 'Topográfico': topo, 'OpenStreetMap': osm, 'Satélite': esri }, null, { position: 'topright' }).addTo(map);
     L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
     legendCtl = L.control({ position: 'bottomright' });
-    legendCtl.onAdd = () => { const d = L.DomUtil.create('div', 'legend'); d.id = 'legend'; return d; };
+    legendCtl.onAdd = () => {
+      const d = L.DomUtil.create('div', 'legend'); d.id = 'legend';
+      d.innerHTML = '<div class="lg-h" title="Minimizar o mostrar la leyenda"><span>Leyenda</span><button type="button" id="lgBtn" aria-label="Minimizar leyenda">–</button></div><div class="lg-b" id="legendBody"></div>';
+      L.DomEvent.disableClickPropagation(d);
+      d.querySelector('.lg-h').onclick = () => {
+        state.legendMin = !state.legendMin; d.classList.toggle('min', state.legendMin);
+        d.querySelector('#lgBtn').textContent = state.legendMin ? '+' : '–';
+      };
+      return d;
+    };
     legendCtl.addTo(map);
+    // norte
+    const north = L.control({ position: 'topleft' });
+    north.onAdd = () => { const d = L.DomUtil.create('div', 'north'); d.title = 'Norte';
+      d.innerHTML = '<svg viewBox="0 0 22 34" aria-label="Norte"><text x="11" y="9" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-size="10" font-weight="800" fill="#454193">N</text><path d="M11 12 L18 32 L11 27.5 Z" fill="#454193"/><path d="M11 12 L4 32 L11 27.5 Z" fill="#fff" stroke="#454193" stroke-width="1" stroke-linejoin="round"/></svg>';
+      return d; };
+    north.addTo(map);
 
     // puntos de UA con clusters (expuestas / no expuestas)
-    const cluOpts = (cls) => ({
+    // un solo grupo de clusters: cuando hay UA expuestas y no expuestas juntas, el cluster se divide en dos mitades (no se sobreponen)
+    cluAll = L.markerClusterGroup({
       showCoverageOnHover: false, maxClusterRadius: 45, disableClusteringAtZoom: 15, chunkedLoading: true,
-      iconCreateFunction: (c) => { const n = c.getChildCount(), s = n < 10 ? 26 : n < 100 ? 32 : n < 1000 ? 38 : 44;
-        return L.divIcon({ html: `<div class="clu ${cls}" style="width:${s}px;height:${s}px">${n}</div>`, className: '', iconSize: [s, s] }); },
-    });
-    cluExp = L.markerClusterGroup(cluOpts('exp'));
-    cluNoExp = L.markerClusterGroup(cluOpts('noexp'));
+      iconCreateFunction: (c) => {
+        let e = 0, ne = 0;
+        c.getAllChildMarkers().forEach((m) => (m.options.kind === 'exp' ? e++ : ne++));
+        if (e && ne) {
+          const w = 22 + 7 * (String(fmt(e)).length + String(fmt(ne)).length);
+          return L.divIcon({ html: `<div class="clu-mix" style="width:${w}px" title="${fmt(e)} UA expuestas · ${fmt(ne)} UA no expuestas"><span class="exp">${fmt(e)}</span><span class="noexp">${fmt(ne)}</span></div>`, className: '', iconSize: [w, 26] });
+        }
+        const n = e + ne, sz = n < 10 ? 26 : n < 100 ? 32 : n < 1000 ? 38 : 44;
+        return L.divIcon({ html: `<div class="clu ${e ? 'exp' : 'noexp'}" style="width:${sz}px;height:${sz}px">${n}</div>`, className: '', iconSize: [sz, sz] });
+      },
+    }).addTo(map);
     // código de la UA visible desde ~1:20.000 (zoom 15)
     const codes = () => map.getContainer().classList.toggle('show-codes', map.getZoom() >= 15);
     map.on('zoomend', codes); codes();
@@ -165,13 +186,15 @@
     $('fReg').querySelectorAll('input').forEach((i) => (i.onchange = () => {
       setRegs([...$('fReg').querySelectorAll('input:checked')].map((x) => x.value)); update(true);
     }));
-    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; renderPoints(); updateSelection(); };
-    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; renderPoints(); updateSelection(); };
+    $('ptExp').onchange = (e) => { state.showExp = e.target.checked; update(); };
+    $('ptNoExp').onchange = (e) => { state.showNoExp = e.target.checked; update(); };
     $('btnDraw').onclick = () => { $('btnDraw').classList.add('active'); drawHandler.enable(); };
     $('btnClearSel').onclick = () => clearSelection();
     $('btnClear').onclick = clearAll;
     $('btnExport').onclick = () => exportExcel(false);
     $('btnExportSel').onclick = () => exportExcel(true);
+    $('layerOn').onchange = (e) => { state.showLayer = e.target.checked; update(); };
+    $('mapExport').querySelectorAll('button').forEach((b) => (b.onclick = () => exportImage(b.dataset.fmt)));
   }
 
   // categorías disponibles según la capa (inundaciones y sequía no tienen "muy alta")
@@ -303,6 +326,7 @@
     geoLayer = L.geoJSON({ type: 'FeatureCollection', features: feats }, {
       style: (f) => {
         const code = f.properties[lv.code], x = val(code), col = colorOf(x), sel = state.par && code === state.par;
+        if (!state.showLayer) return { color: sel ? '#FFC60A' : '#454193', weight: sel ? 3.5 : 1, fillOpacity: 0, fillColor: '#fff', dashArray: null };
         return { color: sel ? '#FFC60A' : '#2b2b3a', weight: sel ? 3.5 : 0.8, fillOpacity: col ? 0.8 : 0.35, fillColor: col || '#d9dce4', dashArray: col ? null : '3' };
       },
       onEachFeature: (f, layer) => {
@@ -325,7 +349,6 @@
     }
     renderLegend(br, colors, lv);
     renderChip(lv);
-    renderCrumb();
     renderStats();
     renderTop(lv, agg, feats);
     renderPoints();
@@ -348,32 +371,34 @@
       lo = state.metric === 'n' ? b + 1 : b + 0.1;
     });
     const allC = state.cats.length === HAZ[state.layer].max;
-    $('legend').innerHTML = `<h4>${HAZ[state.layer].name}<br><span style="font-weight:500;color:#5a6072">${unit} expuestas por ${lv.label}${allC ? '' : '<br>Categorías: ' + catsTxt()}</span></h4>` +
-      `<div class="row"><span class="sw" style="background:#fff"></span>Sin UA expuestas</div>${rows}` +
-      `<div class="row"><span class="sw none"></span>Sin UA registradas</div>` +
-      `<div class="row" style="margin-top:8px"><span class="pt pt-exp"></span>UA expuesta</div><div class="row"><span class="pt pt-noexp"></span>UA no expuesta</div>`;
+    // en la leyenda solo aparecen las capas de UA activas
+    const pts = (state.showExp ? '<div class="row"><span class="pt pt-exp"></span>UA expuesta</div>' : '') +
+      (state.showNoExp ? '<div class="row"><span class="pt pt-noexp"></span>UA no expuesta</div>' : '') +
+      (state.showExp && state.showNoExp ? '<div class="row"><span class="clu-mix lg"><span class="exp">n</span><span class="noexp">n</span></span>Agrupadas: expuestas | no expuestas</div>' : '');
+    $('legendBody').innerHTML = `<h4>${state.layer === 'multi' ? '' : 'Susceptibilidad a '}${HAZ[state.layer].name}<br><span style="font-weight:500;color:#5a6072">${unit} expuestas por ${lv.label}${allC ? '' : '<br>Categorías: ' + catsTxt()}</span></h4>` +
+      (state.showLayer ? `<div class="row"><span class="sw" style="background:#fff"></span>Sin UA expuestas</div>${rows}` +
+        `<div class="row"><span class="sw none"></span>Sin UA registradas</div>` : '<div class="row" style="color:#5a6072">Capa desactivada (solo mapa base)</div>') + (pts ? '<div style="height:4px"></div>' + pts : '');
   }
 
+  // título del mapa: «Provincia: Azuay · Cantón: Cuenca · Parroquia: … · Servicio: …»
   function filterText() {
     const t = [];
-    if (state.prov) t.push(NAMES.prov[state.prov]);
-    if (state.can) t.push(NAMES.can[state.can]);
-    if (state.par) t.push(NAMES.par[state.par]);
-    if (state.regs.length < 4) t.push(state.regs.join(', ') || 'sin regiones');
-    if (state.serv !== '') t.push(titleCase(DATA.dict.serv[+state.serv]));
-    if (state.mod !== '') t.push(titleCase(DATA.dict.mod[+state.mod]));
+    if (state.prov) t.push('Provincia: ' + titleCase(NAMES.prov[state.prov]));
+    if (state.can) t.push('Cantón: ' + titleCase(NAMES.can[state.can]));
+    if (state.par) t.push('Parroquia: ' + titleCase(NAMES.par[state.par]));
+    if (!state.prov && state.regs.length < 4) t.push('Región: ' + (state.regs.join(', ') || 'ninguna'));
+    if (state.serv !== '') t.push('Servicio: ' + titleCase(DATA.dict.serv[+state.serv]));
+    if (state.mod !== '') t.push('Modalidad: ' + titleCase(DATA.dict.mod[+state.mod]));
     return t;
   }
-  function renderChip(lv) {
+  function chipLines(lv) {
     const t = filterText();
-    $('mapChip').innerHTML = `${HAZ[state.layer].name} (${catsTxt()}) · por ${lv.label}<small>${t.length ? t.join(' · ') : 'Nivel nacional · sin filtros'}</small>`;
+    if (!state.prov && state.regs.length === 4) t.unshift('Nivel nacional');
+    return [`${HAZ[state.layer].name} (${catsTxt()}) · por ${lv.label}`, t.join(' · ')];
   }
-  function renderCrumb() {
-    const c = $('crumb'); c.innerHTML = '';
-    const add = (txt, fn) => { const b = document.createElement('button'); b.textContent = txt; b.onclick = fn; c.appendChild(b); };
-    add('Ecuador', () => setProv('', true));
-    if (state.prov) { c.insertAdjacentHTML('beforeend', '<span>›</span>'); add(NAMES.prov[state.prov], () => setProv(state.prov, true)); }
-    if (state.can) { c.insertAdjacentHTML('beforeend', '<span>›</span>'); add(NAMES.can[state.can], () => setCan(state.can, true)); }
+  function renderChip(lv) {
+    const [a, b] = chipLines(lv);
+    $('mapChip').innerHTML = `${esc(a)}<small>${esc(b)}</small>`;
   }
 
   function renderStats() {
@@ -426,14 +451,16 @@
   }
   function popupHtml(u) {
     const D = DATA.dict;
+    const c = (v) => (v ? CAT[v] : '-');
     const rowsP = [
-      ['dpa_despro', u.despro], ['dpa_descan', u.descan], ['dpa_despar', u.despar], ['co_siimdh', u.codigo],
-      ['servicio', D.serv[u.serv]], ['mod', D.mod[u.mod]], ['tipo', D.tipo[u.tipo]], ['total', fmt(u.usuarios)], ['corte', DATA.corte],
-      ['susc_inundacion', RAW[u.inund]], ['susc_movimientos_masa', RAW[u.mm]], ['susc_sequia', RAW[u.seq]], ['susc_inc_forestales', RAW[u.inc]],
-      ['multiamenaza', u.multi ? 'SI' : '-'],
+      [label('dpa_despro'), u.despro], [label('dpa_descan'), u.descan], [label('dpa_despar'), u.despar], ['Código UA', u.codigo],
+      [label('servicio'), D.serv[u.serv]], [label('mod'), D.mod[u.mod]], [label('tipo'), D.tipo[u.tipo]],
+      ['Hombre', fmt(u.hombre)], ['Mujer', fmt(u.mujer)], ['Total', fmt(u.usuarios)], [label('corte'), DATA.corte],
+      ['Suscep. a Inundaciones', c(u.inund)], ['Suscep. a Mov. en Masa', c(u.mm)], ['Suscep. a Sequía', c(u.seq)], ['Suscep. a Incen. Forestales', c(u.inc)],
+      ['Multiamenaza', u.multi ? 'Sí' : '-'],
     ];
     return `<div class="pop"><h3>${esc(u.nombre)}</h3><div class="pop-sub">Variables de la matriz</div><table>` +
-      rowsP.map(([c, v]) => `<tr><td>${esc(label(c))}</td><td>${esc(v)}</td></tr>`).join('') + '</table></div>';
+      rowsP.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(v)}</td></tr>`).join('') + '</table></div>';
   }
   let ICONS;
   function marker(u, kind) {
@@ -441,7 +468,7 @@
       exp: L.divIcon({ html: '<div class="ua-dot exp" style="width:12px;height:12px"></div>', className: '', iconSize: [12, 12] }),
       noexp: L.divIcon({ html: '<div class="ua-dot noexp" style="width:12px;height:12px"></div>', className: '', iconSize: [12, 12] }),
     };
-    const m = L.marker([u.lat, u.lon], { icon: ICONS[kind] });
+    const m = L.marker([u.lat, u.lon], { icon: ICONS[kind], kind });
     m.bindTooltip(u.codigo, { permanent: true, direction: 'right', offset: [6, 0], className: 'code' });
     m.bindPopup(() => popupHtml(u), { maxWidth: 380 });
     return m;
@@ -450,11 +477,11 @@
     const rows = filtered().filter((u) => u.lat != null);
     const e = rows.filter((u) => exposed(u)), ne = rows.filter((u) => !exposed(u));
     $('nExp').textContent = fmt(e.length); $('nNoExp').textContent = fmt(ne.length);
-    cluExp.clearLayers(); cluNoExp.clearLayers();
-    if (state.showNoExp) { cluNoExp.addLayers(ne.map((u) => marker(u, 'noexp'))); if (!map.hasLayer(cluNoExp)) map.addLayer(cluNoExp); }
-    else if (map.hasLayer(cluNoExp)) map.removeLayer(cluNoExp);
-    if (state.showExp) { cluExp.addLayers(e.map((u) => marker(u, 'exp'))); if (!map.hasLayer(cluExp)) map.addLayer(cluExp); }
-    else if (map.hasLayer(cluExp)) map.removeLayer(cluExp);
+    cluAll.clearLayers();
+    const ms = [];
+    if (state.showNoExp) ne.forEach((u) => ms.push(marker(u, 'noexp')));
+    if (state.showExp) e.forEach((u) => ms.push(marker(u, 'exp')));
+    cluAll.addLayers(ms);
   }
 
   // ---------------- selección por polígono ----------------
@@ -622,6 +649,88 @@
   }
   function download(buf, name) {
     const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  // ---------------- exportación del mapa a imagen (PNG / JPG / impresión) ----------------
+  function wrapText(ctx, text, maxW) {
+    const out = []; let line = '';
+    text.split(/\s+/).forEach((w) => { const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; });
+    if (line) out.push(line);
+    return out;
+  }
+  async function exportImage(kind) {
+    const box = $('mapExport'), btns = [...box.querySelectorAll('button')];
+    btns.forEach((b) => (b.disabled = true));
+    const lbl = box.querySelector('span'), oldLbl = lbl.textContent; lbl.textContent = 'Generando imagen…';
+    let tmp;
+    try {
+      const S = 2, FONT = 'Montserrat, Arial, sans-serif';
+      const skip = (el) => el.classList && (el.classList.contains('leaflet-control-zoom') || el.classList.contains('leaflet-control-layers') || el.classList.contains('map-export'));
+      const opts = { useCORS: true, scale: S, logging: false, ignoreElements: skip };
+      const cMap = await html2canvas(document.querySelector('.map-wrap'), Object.assign({ backgroundColor: '#dfe7f1' }, opts));
+      // panel derecho completo (aunque tenga barra de desplazamiento)
+      const panel = document.querySelector('.panel-right');
+      tmp = panel.cloneNode(true);
+      tmp.style.cssText = `position:absolute;left:-10000px;top:0;width:${panel.offsetWidth}px;height:auto;overflow:visible;border:0`;
+      document.body.appendChild(tmp);
+      const cPan = await html2canvas(tmp, Object.assign({ backgroundColor: '#f4f6fb' }, opts));
+
+      const W = cMap.width + cPan.width, pad = 18 * S;
+      const headH = 62 * S, bodyH = Math.max(cMap.height, cPan.height);
+      const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+      // pie: fuentes, elaboración y notas (letra pequeña)
+      const paras = [...document.querySelectorAll('.foot p')].map((p) => p.textContent.trim());
+      ctx.font = `500 ${9.5 * S}px ${FONT}`;
+      const lh = 13 * S, lines = [];
+      paras.forEach((p, i) => { if (i) lines.push(null); wrapText(ctx, p, W - 2 * pad).forEach((l) => lines.push(l)); });
+      const footH = lines.reduce((h, l) => h + (l === null ? 4 * S : lh), 0) + 18 * S;
+      cv.width = W; cv.height = headH + bodyH + footH;
+
+      ctx.fillStyle = '#f4f6fb'; ctx.fillRect(0, 0, cv.width, cv.height);
+      // encabezado
+      ctx.fillStyle = '#454193'; ctx.fillRect(0, 0, W, headH);
+      const bar = 5 * S; [['#FFC60A', 0, 0.5], ['#454193', 0.5, 0.25], ['#ED1C26', 0.75, 0.25]].forEach(([c, x, w]) => { ctx.fillStyle = c; ctx.fillRect(W * x, headH - bar, W * w, bar); });
+      ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';
+      ctx.font = `700 ${17 * S}px ${FONT}`; ctx.fillText(document.querySelector('.brand-text h1').textContent, pad, 26 * S);
+      ctx.font = `500 ${11.5 * S}px ${FONT}`; ctx.globalAlpha = 0.88; ctx.fillText(document.querySelector('.brand-text p').textContent, pad, 44 * S); ctx.globalAlpha = 1;
+      const logo = document.querySelector('.logo-gob');
+      if (logo && logo.complete && logo.naturalWidth) { const h = 40 * S, w = (h * logo.naturalWidth) / logo.naturalHeight; ctx.drawImage(logo, W - pad - w, (headH - bar - h) / 2, w, h); }
+      // cuerpo: mapa + panel derecho
+      ctx.drawImage(cMap, 0, headH); ctx.drawImage(cPan, cMap.width, headH);
+      ctx.fillStyle = '#e3e6ef'; ctx.fillRect(cMap.width, headH, S, bodyH);
+      // pie
+      const y0 = headH + bodyH;
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, y0, W, footH);
+      ctx.fillStyle = '#e3e6ef'; ctx.fillRect(0, y0, W, S);
+      ctx.fillStyle = '#5a6072'; ctx.font = `500 ${9.5 * S}px ${FONT}`;
+      let y = y0 + 9 * S + lh * 0.75;
+      lines.forEach((l) => { if (l === null) { y += 4 * S; return; } ctx.fillText(l, pad, y); y += lh; });
+
+      const tag = [state.prov && NAMES.prov[state.prov], state.can && NAMES.can[state.can], state.par && NAMES.par[state.par]]
+        .filter(Boolean).join('_').replace(/\s+/g, '_') || 'NACIONAL';
+      const name = `MAPA_UA_${HAZ[state.layer].short.replace(/[ .]+/g, '_').toUpperCase()}_${tag}`;
+      if (kind === 'print') {
+        const url = cv.toDataURL('image/png'), w = window.open('', '_blank');
+        if (!w) { alert('Permita las ventanas emergentes para imprimir el mapa.'); return; }
+        w.document.write(`<!DOCTYPE html><title>${name}</title><style>@page{size:landscape;margin:8mm}html,body{margin:0}img{width:100%;height:auto}</style><img src="${url}" onload="setTimeout(function(){window.print()},200)">`);
+        w.document.close();
+      } else {
+        const jpg = kind === 'jpg';
+        const blob = await new Promise((res) => cv.toBlob(res, jpg ? 'image/jpeg' : 'image/png', 0.93));
+        saveBlob(blob, name + (jpg ? '.jpg' : '.png'));
+      }
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo generar la imagen del mapa. Intente con otro mapa base o vuelva a intentarlo.');
+    } finally {
+      if (tmp) tmp.remove();
+      lbl.textContent = oldLbl; btns.forEach((b) => (b.disabled = false));
+    }
+  }
+  function saveBlob(blob, name) {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
