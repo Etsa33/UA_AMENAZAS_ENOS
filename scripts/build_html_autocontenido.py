@@ -67,6 +67,17 @@ def image_uri(path):
     return data_uri(path.read_bytes(), path.name)
 
 
+def inline_local_images(html):
+    def replace(match):
+        relative_path = match.group(1)
+        path = ROOT / relative_path
+        if not path.is_file():
+            raise RuntimeError(f"No se encontró la imagen local: {relative_path}")
+        return f'src="{image_uri(path)}"'
+
+    return re.sub(r'src="(img/[^"]+)"', replace, html)
+
+
 def build():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     html = re.sub(r'<link rel="preconnect"[^>]*>\s*', "", html)
@@ -81,8 +92,7 @@ def build():
     local_css = (ROOT / "css" / "styles.css").read_text(encoding="utf-8")
     html = html.replace('<link rel="stylesheet" href="css/styles.css">', f"<style>\n{local_css}\n</style>")
 
-    html = html.replace('src="img/logo_mtdh.png"', f'src="{image_uri(ROOT / "img" / "logo_mtdh.png")}"')
-    html = html.replace('src="img/logo_gobierno.png"', f'src="{image_uri(ROOT / "img" / "logo_gobierno.png")}"')
+    html = inline_local_images(html)
 
     for url in SCRIPTS:
         javascript = safe_script(download(url))
