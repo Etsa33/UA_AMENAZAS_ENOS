@@ -36,6 +36,25 @@ Para regenerarlo después de actualizar el código o los datos:
 
     python scripts/build_html_autocontenido.py
 
+Requiere Python 3.10 o posterior y conexión a Internet durante la generación para descargar
+las librerías, fuentes y recursos de sus hojas de estilo. El generador usa únicamente la
+biblioteca estándar de Python y puede ejecutarse desde cualquier carpeta.
+
+El archivo se crea en la raíz del proyecto como `ua_amenazas.html` y no se versiona en Git.
+Para compartirlo basta con copiar ese único archivo; no necesita las carpetas del proyecto.
+Sin conexión se mantienen los datos, filtros, capas territoriales y reportes Excel; los fondos
+cartográficos de Esri/OpenStreetMap necesitan conexión para cargar sus teselas.
+
+El contenido se toma de los archivos de la rama actual. En la rama `mhtml`, incorporar primero
+las actualizaciones de `main` y luego ejecutar el generador para incluir el mismo corte de datos
+y la misma interfaz publicada en GitHub Pages.
+
+El script detecta las hojas de estilo y los scripts declarados en `index.html`, conserva su orden
+e incrusta sus recursos. Antes de escribir el resultado comprueba los JSON, los límites DPA y la
+cantidad y el orden de las UA respecto de la matriz Excel. Al terminar muestra la ruta, el tamaño,
+el corte y el número de UA incluidas. Los módulos JavaScript requieren resolver sus importaciones
+y se rechazan explícitamente en lugar de generar un portable incompleto.
+
 ## Actualizar el corte mensual
 
     pip install openpyxl pyproj
