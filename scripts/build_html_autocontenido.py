@@ -9,7 +9,7 @@ from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "mapa_autocontenido.html"
+OUTPUT = ROOT / "ua_amenazas.html"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36"
 
 STYLES = [
@@ -24,6 +24,7 @@ SCRIPTS = [
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js",
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js",
     "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
 ]
 
 DATA = {
@@ -117,6 +118,8 @@ def build():
 
     if re.search(r'(?:src|href)="(?:css|js|img|data)/', html):
         raise RuntimeError("El resultado aún contiene referencias a archivos locales")
+    if re.search(r'<(?:script|link)\b[^>]+(?:src|href)="https?://', html, re.IGNORECASE):
+        raise RuntimeError("El resultado aún contiene dependencias externas sin incrustar")
 
     OUTPUT.write_text(html, encoding="utf-8", newline="\n")
     print(f"Generado: {OUTPUT}")

@@ -28,7 +28,7 @@ Para probar localmente: `python -m http.server 8000` en la carpeta y abrir http:
 
 ## HTML autocontenido
 
-`mapa_autocontenido.html` contiene CSS, JavaScript, librerías, fuentes, imágenes y todos los JSON.
+`ua_amenazas.html` contiene CSS, JavaScript, librerías, fuentes, imágenes y todos los JSON.
 Puede copiarse a cualquier carpeta, abrirse directamente con doble clic o servirse como un archivo
 estático desde FastAPI. Solo las teselas de los mapas base Esri/OpenStreetMap requieren Internet.
 
