@@ -2,7 +2,7 @@
 "encabezado": [
 [
 "Tabla:",
-"Unidades de Atención expuestas a amenazas - Agosto 2026"
+"Unidades de Atención ubicadas en zonas susceptibles a amenazas asociadas al evento El Niño, corte septiembre 2026"
 ],
 [
 "Elaboración: ",
@@ -10,26 +10,26 @@
 ],
 [
 "Fuente: ",
-"Reporte territorial de Unidades de Atención, con corte a agosto 2026."
+"Reporte territorial de Unidades de Atención del SIIMTDH, con corte a septiembre 2026."
 ],
 [
 "Coberturas espaciales:"
 ],
 [
-"Zonas susceptibles a inundaciones (MAGP, 2015)"
+"Zonas susceptibles a Inundaciones (MAGAP, 2015)"
 ],
 [
 "Susceptibilidad por Movimientos en masa (SNGR, 2011)"
 ],
 [
-"Zonas susceptibles a sequías (MAGP, 2015)"
+"Zonas susceptibles a Sequías (MAGAP, 2015)"
 ],
 [
-"Susceptibilidad a Incendios Forestales (SNGR, 2019)"
+"Susceptibilidad a Incendios Forestales (SNGR, 2015)"
 ],
 [
 "Notas:",
-"* Existen Unidades de Atención con coordenadas y otras no, debido a la no culminación del ingreso de datos en el módulo de usuarios SIIMDH.\n"
+"* Existen Unidades de Atención con coordenadas y otras no, debido a la no culminación del ingreso de datos en el módulo de usuarios SIIMTDH.\n"
 ],
 [
 "*La variable area cuenta con la caracterización estimada por el usuario de urbana y rural."

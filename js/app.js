@@ -33,7 +33,7 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n).toLocaleString('es-EC');
   const pct = (a, b) => (b ? (100 * a) / b : 0);
- const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
+  const fpct = (v) => v.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function loadJson(name, path) {
@@ -265,7 +265,9 @@
   }
 
   function level() {
-    if (state.can) return { key: 'par', geo: GEO.par, code: 'DPA_PARROQ', name: 'DPA_DESPAR', parent: (f) => f.properties.DPA_CANTON === state.can, label: 'parroquia' };
+    if (state.can) return { key: 'par', geo: GEO.par, code: 'DPA_PARROQ', name: 'DPA_DESPAR', label: 'parroquia',
+      // con una parroquia filtrada se muestra solo esa parroquia
+      parent: (f) => (state.par ? f.properties.DPA_PARROQ === state.par : f.properties.DPA_CANTON === state.can) };
     if (state.prov) return { key: 'can', geo: GEO.can, code: 'DPA_CANTON', name: 'DPA_DESCAN', parent: (f) => f.properties.DPA_PROVIN === state.prov, label: 'cantón' };
     return { key: 'prov', geo: GEO.prov, code: 'DPA_PROVIN', name: 'DPA_DESPRO', parent: (f) => state.regs.includes(REG_OF[f.properties.DPA_PROVIN]), label: 'provincia' };
   }
@@ -358,7 +360,7 @@
   function drill(key, code) {
     if (key === 'prov') setProv(code, true);
     else if (key === 'can') setCan(code, true);
-    else { state.par = state.par === code ? '' : code; $('fPar').value = state.par; update(false); }
+    else { state.par = state.par === code ? '' : code; $('fPar').value = state.par; update(true); }
   }
 
   function renderLegend(br, colors, lv) {

@@ -41,7 +41,7 @@ Para regenerarlo después de actualizar el código o los datos:
     pip install openpyxl pyproj
     python scripts/preparar_ua.py UA_SEP26_AMENAZAS.xlsx "Septiembre 2026" UA_SEPTIEMBRE_2026
 
-(el tercer argumento es el nombre de la hoja; por defecto `UA_AGOSTO_2026`). El script usa `cod_cc`
+(el tercer argumento es el nombre de la hoja; por defecto `UA_AGOSTO_2026`; para septiembre: `UA_SEPTIEMBRE_2026`). El script usa `cod_cc`
 para enlazar cada UA con el polígono parroquial, convierte las coordenadas UTM 17S (`x`, `y`) a
 geográficas y reporta si algún código no tiene polígono. Luego subir la carpeta `data/` actualizada.
 

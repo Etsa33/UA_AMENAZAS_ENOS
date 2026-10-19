@@ -33,7 +33,9 @@ rows = [dict(zip(hdr, r)) for r in raw]
 
 pars = {f['properties']['DPA_PARROQ'] for f in json.load(open('data/parroquias.json', encoding='utf-8'))['features']}
 utm = Transformer.from_crs('EPSG:32717', 'EPSG:4326', always_xy=True)
-cat = lambda v: {'1_MEDIA': 1, '2_ALTA': 2, '3_MUY ALTA': 3}.get(v, 0)
+# acepta '1_MEDIA'/'2_ALTA'/'3_MUY ALTA' (agosto) y 'Media'/'Alta'/'Muy Alta' (septiembre en adelante)
+CATS = {'1_MEDIA': 1, '2_ALTA': 2, '3_MUY ALTA': 3, 'MEDIA': 1, 'ALTA': 2, 'MUY ALTA': 3}
+cat = lambda v: CATS.get(str(v or '').strip().upper(), 0)
 cc = lambda r: str(r['cod_cc']).zfill(6)   # parroquia DPA: urbanas agregadas en la cabecera cantonal
 
 d = {k: [] for k in ('serv', 'mod', 'ud', 'tipo', 'area', 'adm')}
